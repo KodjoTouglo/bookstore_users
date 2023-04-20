@@ -2,6 +2,7 @@ package users
 
 import (
 	"fmt"
+	"github.com/KodjoTouglo/bookstore_users/storage/postgres/users_db"
 	"github.com/KodjoTouglo/bookstore_users/utils/date_utils"
 	"github.com/KodjoTouglo/bookstore_users/utils/errors"
 )
@@ -22,6 +23,9 @@ func (user *User) Save() *errors.APIError {
 }
 
 func (user *User) Get() *errors.APIError {
+	if err := users_db.Client.Ping(); err != nil {
+		panic(err)
+	}
 	result := usersDB[user.Id]
 	if result == nil {
 		return errors.NotFoundError(fmt.Sprintf("User %d not found", user.Id))
