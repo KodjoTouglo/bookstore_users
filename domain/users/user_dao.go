@@ -1,6 +1,7 @@
 package users
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/KodjoTouglo/bookstore_users/storage/postgres/users_db"
 	"github.com/KodjoTouglo/bookstore_users/utils/date_utils"
@@ -18,7 +19,12 @@ func (user *User) Save() *errors.APIError {
 	if err != nil {
 		return errors.InternalServerError(err.Error())
 	}
-	defer stmt.Close()
+	defer func(stmt *sql.Stmt) {
+		err := stmt.Close()
+		if err != nil {
+
+		}
+	}(stmt)
 	user.DateCreated = date_utils.GetNow()
 	var userId int64
 	err = stmt.QueryRow(user.FirstName, user.LastName, user.Email, user.DateCreated).Scan(&userId)
