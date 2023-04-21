@@ -21,3 +21,9 @@ func (user *User) ValidateEmail() *errors.APIError {
 	}
 	return nil
 }
+
+func (user *User) Validate() *errors.APIError {
+	user.FirstName = strings.TrimSpace(strings.ToLower(user.FirstName))
+	user.LastName = strings.TrimSpace(strings.ToLower(user.LastName))
+	return nil
+}
