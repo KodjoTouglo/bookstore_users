@@ -5,20 +5,30 @@ import (
 	"github.com/KodjoTouglo/bookstore_users/storage/postgres/users_db"
 	"github.com/KodjoTouglo/bookstore_users/utils/date_utils"
 	"github.com/KodjoTouglo/bookstore_users/utils/errors"
+	"strings"
 )
+
+const queryInsertUser = "INSERT INTO users(first_name, last_name, email, date_created) VALUES($1, $2, $3, $4) " +
+	"RETURNING id;"
 
 var usersDB = make(map[int64]*User)
 
 func (user *User) Save() *errors.APIError {
-	current := usersDB[user.Id]
-	if current != nil {
-		if current.Email == user.Email {
-			return errors.BadRequestError(fmt.Sprintf("Email `%s` already registered.", user.Email))
-		}
-		return errors.BadRequestError(fmt.Sprintf("User `%d` already exist.", user.Id))
+	stmt, err := users_db.Client.Prepare(queryInsertUser)
+	if err != nil {
+		return errors.InternalServerError(err.Error())
 	}
-	user.DateCreated = date_utils.GetNowString()
-	usersDB[user.Id] = user
+	defer stmt.Close()
+	user.DateCreated = date_utils.GetNow()
+	var userId int64
+	err = stmt.QueryRow(user.FirstName, user.LastName, user.Email, user.DateCreated).Scan(&userId)
+	if err != nil {
+		if strings.Contains(err.Error(), "users_email_key") {
+			return errors.BadRequestError(fmt.Sprintf("email `%s` already exist", user.Email))
+		}
+		return errors.InternalServerError(err.Error())
+	}
+	user.Id = userId
 	return nil
 }
 
